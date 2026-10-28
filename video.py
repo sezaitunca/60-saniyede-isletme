@@ -13,6 +13,7 @@ SERI = {"tr": "60 Saniyede İşletme", "en": "Business in 60 Seconds",
         "de": "Business in 60 Sekunden", "ru": "Бизнес за 60 секунд"}
 YORUM = {"tr": "Cevabını yorumlara yaz", "en": "Drop your answer below",
          "de": "Schreib's in die Kommentare", "ru": "Пиши ответ в комментариях"}
+HESAP = "@alanyauniisletmee"  # kapanışta takip edilecek Instagram hesabı
 TAKIP = {"tr": ("Takip et", "Her gün yeni bir kavram"), "en": ("Follow", "A new concept every day"),
          "de": ("Folgen", "Jeden Tag ein neues Konzept"), "ru": ("Подпишись", "Каждый день новое понятие")}
 
@@ -350,7 +351,11 @@ def kare_ciz(t, palet, zamanlar, duzenler, kz, vurgular, dil, sure):
         g = f1.getlength(b1)
         d.rounded_rectangle([(W - g) / 2 - 60, y - 95, (W + g) / 2 + 60, y + 95], 95, fill=vurgu[:3] + (int(255 * p),))
         d.text((W / 2, y), b1, font=f1, fill=(20, 20, 30, int(255 * p)), anchor="mm")
-        d.text((W / 2, y + 170), b2, font=f2, fill=(255, 255, 255, int(255 * p)), anchor="mm")
+        fh = font(64, 850)
+        g = fh.getlength(HESAP)
+        d.rounded_rectangle([(W - g) / 2 - 36, y + 135, (W + g) / 2 + 36, y + 235], 50, fill=(255, 255, 255, int(235 * p)))
+        d.text((W / 2, y + 185), HESAP, font=fh, fill=renk(palet[0])[:3] + (int(255 * p),), anchor="mm")
+        d.text((W / 2, y + 300), b2, font=f2, fill=(255, 255, 255, int(255 * p)), anchor="mm")
     return d_im
 
 def video_yap(s, dil, gun_no, klasor):

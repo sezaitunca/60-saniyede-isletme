@@ -24,12 +24,16 @@ def youtube_yukle(dosya, s, dil):
 
 IG = "https://graph.instagram.com"
 
-def instagram_yayinla(video_url, s):
+def instagram_yayinla(video_url, s, tur="REELS"):
+    """tur: "REELS" (akışta da paylaşılır) veya "STORIES" (24 saatlik hikâye)."""
     tok, kim = os.environ["IG_TOKEN"], os.environ["IG_USER_ID"]
-    kap = requests.post(f"{IG}/{kim}/media", timeout=60, data={
-        "media_type": "REELS", "video_url": video_url, "share_to_feed": "true",
-        "caption": s["aciklama"] + "\n\n" + " ".join(s["etiketler"]),
-        "access_token": tok}).json()
+    veri = {"media_type": tur, "video_url": video_url, "access_token": tok}
+    if tur == "REELS":
+        veri.update(share_to_feed="true",
+                    caption=s["aciklama"] + "\n\n" + " ".join(s["etiketler"]))
+    kap = requests.post(f"{IG}/{kim}/media", timeout=60, data=veri).json()
+    if "id" not in kap:
+        raise RuntimeError(f"Instagram {tur} kabı oluşturulamadı: {kap}")
     for _ in range(5):  # dakikada bir, en fazla 5 dakika kontrol
         time.sleep(60)
         durum = requests.get(f"{IG}/{kap['id']}", timeout=60,

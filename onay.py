@@ -5,9 +5,19 @@ TG = f"https://api.telegram.org/bot{os.environ['TELEGRAM_TOKEN']}"
 SOHBET = os.environ["TELEGRAM_CHAT_ID"]
 PAGES = os.environ["PAGES_URL"].rstrip("/")
 INSTAGRAM_DILLERI = {"tr", "en"}
+# Bilgileri girilmemiş platform atlanır; yalnızca bağlı olanlara yayın yapılır
+YOUTUBE_BAGLI = bool(os.environ.get("YT_REFRESH_TOKEN"))
+INSTAGRAM_BAGLI = bool(os.environ.get("IG_TOKEN") and os.environ.get("IG_USER_ID"))
 
 def mesaj(metin):
     requests.post(f"{TG}/sendMessage", data={"chat_id": SOHBET, "text": metin}, timeout=60)
+
+def dene(ad, is_):
+    """Bir platformdaki hata diğerlerini durdurmasın; sonucu Telegram'a bildir."""
+    try:
+        mesaj(f"{ad}: {is_()}")
+    except Exception as e:
+        mesaj(f"{ad}: yayınlanamadı ({e})")
 
 guncellemeler = requests.get(f"{TG}/getUpdates", timeout=60,
     params={"allowed_updates": json.dumps(["callback_query"])}).json()["result"]
@@ -20,15 +30,19 @@ for u in guncellemeler:
     if karar != "ok":
         mesaj(f"{gun} {dil.upper()} reddedildi.")
         continue
+    if not (YOUTUBE_BAGLI or INSTAGRAM_BAGLI):
+        mesaj(f"{gun} {dil.upper()} onaylandı ama bağlı bir yayın hesabı yok; yayınlanmadı.")
+        continue
     s = requests.get(f"{PAGES}/{gun}/meta.json", timeout=60).json()[dil]
     url = f"{PAGES}/{gun}/{dil}.mp4"
-    dosya = f"/tmp/{gun}_{dil}.mp4"
-    with open(dosya, "wb") as f:
-        f.write(requests.get(url, timeout=120).content)
-    yt = youtube_yukle(dosya, s, dil)
-    mesaj(f"YouTube: https://youtube.com/shorts/{yt}")
-    if dil in INSTAGRAM_DILLERI:
-        instagram_yayinla(url, s)
-        mesaj(f"Instagram: {dil.upper()} Reels yayınlandı.")
+    if YOUTUBE_BAGLI:
+        dosya = f"/tmp/{gun}_{dil}.mp4"
+        with open(dosya, "wb") as f:
+            f.write(requests.get(url, timeout=120).content)
+        dene("YouTube", lambda: f"https://youtube.com/shorts/{youtube_yukle(dosya, s, dil)}")
+    if INSTAGRAM_BAGLI and dil in INSTAGRAM_DILLERI:
+        dene("Instagram Reels", lambda: instagram_yayinla(url, s, "REELS") or "yayınlandı")
+        dene("Instagram Story", lambda: instagram_yayinla(url, s, "STORIES") or "yayınlandı")
+# Hatalar Telegram'a bildirildiği için onaylar her durumda işlenmiş sayılır (çift yükleme olmaz)
 if guncellemeler:
     requests.get(f"{TG}/getUpdates", params={"offset": guncellemeler[-1]["update_id"] + 1}, timeout=60)
