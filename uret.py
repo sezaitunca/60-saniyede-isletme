@@ -51,9 +51,40 @@ def onaya_gonder(dosya, gun, dil, baslik):
             "chat_id": SOHBET, "caption": f"{gun} · {dil.upper()} · {baslik}",
             "reply_markup": json.dumps(tuslar)}, timeout=120).raise_for_status()
 
+def onceki_videolari_koru():
+    """Pages her yayında baştan kurulur; onay bekleyen dünkü ve bugünkü videoları geri indirir."""
+    pages = os.environ.get("PAGES_URL", "").rstrip("/")
+    if not pages:
+        return []
+    sinir = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+    try:
+        klasorler = requests.get(f"{pages}/index.json", timeout=60).json()
+    except Exception:  # liste yoksa en azından dünün ve bugünün günlük klasörleri
+        klasorler = [sinir, datetime.date.today().isoformat()]
+    korunan = []
+    for ad in klasorler:
+        if ad[:10] < sinir:
+            continue
+        r = requests.get(f"{pages}/{ad}/meta.json", timeout=60)
+        if r.status_code != 200:
+            continue
+        os.makedirs(f"cikti/{ad}", exist_ok=True)
+        with open(f"cikti/{ad}/meta.json", "wb") as f:
+            f.write(r.content)
+        for dil in r.json():
+            with open(f"cikti/{ad}/{dil}.mp4", "wb") as f:
+                f.write(requests.get(f"{pages}/{ad}/{dil}.mp4", timeout=120).content)
+        korunan.append(ad)
+    return korunan
+
 if __name__ == "__main__":
+    korunan = onceki_videolari_koru()
     kavram, gun_no = bugunun_kavrami()
     gun = datetime.date.today().isoformat()
+    if os.environ.get("KAVRAM_ID"):  # elle istenen kavram: ayrı klasöre, günlük videoyu ezmeden
+        kavram = next(k for k in json.load(open("data/kavramlar.json", encoding="utf-8"))
+                      if k["id"] == int(os.environ["KAVRAM_ID"]))
+        gun = f"{gun}-k{kavram['id']}"
     klasor = f"cikti/{gun}"
     os.makedirs(klasor, exist_ok=True)
     meta = {}
@@ -66,3 +97,5 @@ if __name__ == "__main__":
     for ad in os.listdir(klasor):  # yalnızca dil videoları ve meta.json kalır
         if "_" in ad or not (ad.endswith(".mp4") or ad == "meta.json"):
             os.remove(os.path.join(klasor, ad))
+    with open("cikti/index.json", "w") as f:
+        json.dump(sorted(set(korunan) | {gun}), f)
