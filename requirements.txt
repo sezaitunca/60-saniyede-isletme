@@ -1,0 +1,6 @@
+google-genai>=2.25.0
+pillow
+requests
+google-api-python-client
+google-auth
+google-auth-oauthlib
