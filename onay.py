@@ -20,7 +20,8 @@ def dene(ad, is_):
         mesaj(f"{ad}: yayınlanamadı ({e})")
 
 if not (YOUTUBE_BAGLI or INSTAGRAM_BAGLI):
-    raise SystemExit("Bağlı yayın hesabı yok; onaylar hesap bağlanana kadar bekletiliyor.")
+    print("Bağlı yayın hesabı yok; onaylar hesap bağlanana kadar bekletiliyor.")
+    raise SystemExit(0)
 
 guncellemeler = requests.get(f"{TG}/getUpdates", timeout=60,
     params={"allowed_updates": json.dumps(["callback_query"])}).json()["result"]
