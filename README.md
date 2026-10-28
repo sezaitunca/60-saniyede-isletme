@@ -27,3 +27,26 @@ Instagram tokenı 60 günde dolar; ayda bir yenileyin:
 ```bash
 curl "https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=$IG_TOKEN"
 ```
+
+## Yerelde geliştirme
+
+İlk kurulum (bir kez; Python ortamı, ffmpeg ve Türkçe ses proje içine kurulur):
+
+```bash
+cd ~/60-saniyede-isletme
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt imageio-ffmpeg
+.venv/bin/python -m piper.download_voices --download-dir sesler tr_TR-dfki-medium
+ln -sf "$(.venv/bin/python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')" .venv/bin/ffmpeg
+```
+
+Deneme videosu (Telegram'a gönderilmez, yayınlanmaz; `deneme/tr.mp4` açılır):
+
+```bash
+.venv/bin/python yerel_dene.py        # günün kavramı
+.venv/bin/python yerel_dene.py 31     # belirli bir kavram
+```
+
+Anahtarlar `.env` dosyasında durur (repoya gitmez). Bir videonun metnini elle düzeltmek için `data/senaryolar/<kavram_no>.json` oluşturun; video Claude çağrılmadan birebir o metinle üretilir.
+
+Değişiklikleri yayına almak: `git add -A && git commit -m "..." && git push`. Ertesi sabah 07:00 videosu yeni kodla üretilir; hemen denemek için GitHub > Actions > "Günlük video üret" > Run workflow (isteğe bağlı kavram numarası).

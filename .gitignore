@@ -2,4 +2,6 @@ client_secret*.json
 cikti/
 __pycache__/
 .env
-sesler/
+sesler
+.venv/
+deneme/
