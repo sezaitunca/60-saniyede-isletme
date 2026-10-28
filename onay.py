@@ -19,6 +19,9 @@ def dene(ad, is_):
     except Exception as e:
         mesaj(f"{ad}: yayınlanamadı ({e})")
 
+if not (YOUTUBE_BAGLI or INSTAGRAM_BAGLI):
+    raise SystemExit("Bağlı yayın hesabı yok; onaylar hesap bağlanana kadar bekletiliyor.")
+
 guncellemeler = requests.get(f"{TG}/getUpdates", timeout=60,
     params={"allowed_updates": json.dumps(["callback_query"])}).json()["result"]
 for u in guncellemeler:
@@ -29,9 +32,6 @@ for u in guncellemeler:
     requests.post(f"{TG}/answerCallbackQuery", data={"callback_query_id": cq["id"], "text": "Alındı"})
     if karar != "ok":
         mesaj(f"{gun} {dil.upper()} reddedildi.")
-        continue
-    if not (YOUTUBE_BAGLI or INSTAGRAM_BAGLI):
-        mesaj(f"{gun} {dil.upper()} onaylandı ama bağlı bir yayın hesabı yok; yayınlanmadı.")
         continue
     s = requests.get(f"{PAGES}/{gun}/meta.json", timeout=60).json()[dil]
     url = f"{PAGES}/{gun}/{dil}.mp4"
