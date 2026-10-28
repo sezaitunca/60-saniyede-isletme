@@ -15,5 +15,6 @@ Verilen kavramı, verilen tanıma sadık kalarak hedef dilde kısa video senaryo
 - Hedef dilin doğal günlük üslubunu kullan.
 
 ## Çıktı
-Yalnızca JSON: {"baslik": "...", "cumleler": ["..."], "aciklama": "...", "etiketler": ["#..."]}
+Yalnızca JSON: {"baslik": "...", "cumleler": ["..."], "vurgular": ["..."], "aciklama": "...", "etiketler": ["#..."]}
 Başlık en fazla 60 karakter, 3-5 etiket.
+`vurgular`: ekranda renkle vurgulanacak 4-6 anahtar kelime; her biri cümlelerde geçtiği haliyle tek kelime (kavram adı dahil).
