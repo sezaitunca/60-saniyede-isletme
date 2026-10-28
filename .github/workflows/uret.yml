@@ -23,7 +23,7 @@ jobs:
         with:
           path: sesler
           key: piper-sesler-v1
-      - run: python -m piper.download_voices --download-dir sesler tr_TR-dfki-medium en_US-lessac-medium de_DE-thorsten-medium ru_RU-irina-medium
+      - run: python -m piper.download_voices --download-dir sesler tr_TR-dfki-medium
       - run: python uret.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

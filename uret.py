@@ -3,7 +3,7 @@ import requests
 import anthropic
 from video import video_yap
 
-DILLER = {"tr": "Türkçe", "en": "English", "de": "Deutsch", "ru": "Русский"}
+DILLER = {"tr": "Türkçe"}  # yalnızca Türkçe; diğerleri: "en": "English", "de": "Deutsch", "ru": "Русский"
 BASLANGIC = datetime.date(2026, 10, 28)  # serinin ilk günü; kendinize göre değiştirin
 client = anthropic.Anthropic()  # ANTHROPIC_API_KEY ortam değişkenini okur
 SKILL = open("skills/kisa-video-senaristi/SKILL.md", encoding="utf-8").read()

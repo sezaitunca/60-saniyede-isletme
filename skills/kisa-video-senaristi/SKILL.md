@@ -15,6 +15,7 @@ Verilen kavramı, verilen tanıma sadık kalarak hedef dilde kısa video senaryo
 - Hedef dilin doğal günlük üslubunu kullan.
 
 ## Çıktı
-Yalnızca JSON: {"baslik": "...", "cumleler": ["..."], "vurgular": ["..."], "aciklama": "...", "etiketler": ["#..."]}
+Yalnızca JSON: {"baslik": "...", "cumleler": ["..."], "vurgular": ["..."], "ikonlar": ["..."], "aciklama": "...", "etiketler": ["#..."]}
 Başlık en fazla 60 karakter, 3-5 etiket.
 `vurgular`: ekranda renkle vurgulanacak 4-6 anahtar kelime; her biri cümlelerde geçtiği haliyle tek kelime (kavram adı dahil).
+`ikonlar`: her cümle için bir tane (cümle sayısı kadar), cümlenin anlamına en uygun olanı şu listeden seç: kahve, para, grafik_artis, grafik_dusus, soru, ampul, saat, alisveris, kitap, hedef, terazi, fabrika, insanlar, roket, kamyon, kalp, cuzdan. İlk cümle soru ise `soru`, son cümle için `soru` veya `ampul` iyi çalışır.

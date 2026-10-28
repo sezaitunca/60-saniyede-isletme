@@ -3,6 +3,7 @@ import math, subprocess, wave
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from piper import PiperVoice, SynthesisConfig
+from ikonlar import IKONLAR, sticker
 
 W, H, FPS, SR = 1080, 1920, 30, 44100
 FONT = "fonts/Montserrat.ttf"
@@ -26,6 +27,9 @@ PALETLER = [
 ]
 
 LEAD, ARA, OUTRO = 0.6, 0.35, 2.2  # saniye: giriş, cümle arası, kapanış
+VURUS = 60 / 104  # müzik temposu (saniye/vuruş)
+IKON_Y, IKON_BOYUT, METIN_Y = 690, 400, 1200  # ikon merkezi, ikon boyu, altyazı merkezi
+YEDEK_IKONLAR = ["soru", "ampul", "kahve", "para", "hedef"]
 
 def renk(h, a=255):
     return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5)) + (a,)
@@ -63,8 +67,7 @@ def _ekle(iz, ornek, bas):
 def muzik(sure, tohum):
     """Telifsiz, kodla sentezlenen hareketli bir lo-fi pop altlığı."""
     rng = np.random.default_rng(tohum)
-    bpm = 104
-    vurus = 60 / bpm
+    vurus = VURUS
     kok = 57 + [0, 2, 5, 7, -2, 3][tohum % 6]
     akorlar = [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]]  # I–V–vi–IV
     n = int(sure * SR) + SR
@@ -194,10 +197,10 @@ def cumle_duzeni(cumle):
     for boyut in (96, 86, 76, 68, 60, 52):
         f = font(boyut, 900)
         satirlar = satirlara_bol(kelimeler, f, W - 180)
-        if len(satirlar) <= 5 and max(f.getlength(k) for k in kelimeler) <= W - 180:
+        if len(satirlar) <= 4 and max(f.getlength(k) for k in kelimeler) <= W - 180:
             break
     satir_h = int(boyut * 1.32)
-    y0 = 1010 - len(satirlar) * satir_h // 2
+    y0 = METIN_Y - len(satirlar) * satir_h // 2
     konum, bosluk = [], f.getlength(" ")
     for i, satir in enumerate(satirlar):
         genislik = sum(f.getlength(k) for k in satir) + bosluk * (len(satir) - 1)
@@ -231,14 +234,71 @@ def sabit_katman(seri, baslik, palet):
     d.rounded_rectangle([70, 120, 70 + g + 90, 186], 33, fill=(0, 0, 0, 90))
     d.ellipse([92, 141, 116, 165], fill=renk(palet[4]))
     d.text((132, 153), seri, font=f, fill="white", anchor="lm")
-    fb = font(66, 850)
-    y = 240
-    for satir in satirlara_bol(baslik.split(), fb, W - 160):
+    fb = font(62, 850)
+    y = 230
+    for satir in satirlara_bol(baslik.split(), fb, W - 160)[:3]:
         metin = " ".join(satir)
         d.text((80, y + 5), metin, font=fb, fill=(0, 0, 0, 80))
         d.text((80, y), metin, font=fb, fill="white")
-        y += 84
+        y += 78
     return im
+
+def vurus_zarfi(t):
+    """Her müzik vuruşunda 1'e sıçrayıp sönen nabız."""
+    return math.exp(-(t % VURUS) / 0.12)
+
+def aktif_cumle(t, kz):
+    # yeni cümlenin ilk kelimesi gelene kadar önceki cümle ekranda kalır
+    return max([i for i, z in enumerate(kz) if t >= z[0]] or [0])
+
+def geri_esnek(p):
+    """0→1 arası, sonda hafifçe taşan (easeOutBack) geçiş."""
+    p -= 1
+    return 1 + 2.7 * p ** 3 + 1.7 * p ** 2
+
+def ikon_hazirla(ad, boyut=IKON_BOYUT):
+    return sticker(ad).resize((boyut, boyut), Image.LANCZOS)
+
+def isilti_hazirla():
+    im = Image.new("RGBA", (520, 520), (0, 0, 0, 0))
+    ImageDraw.Draw(im).ellipse([110, 110, 410, 410], fill=(255, 255, 255, 110))
+    return im.filter(ImageFilter.GaussianBlur(45))
+
+def ikon_ciz(kare, ikon, isilti, t, t0, cx, cy):
+    """İkonu zıplayarak girer, sonra ritimle sallanıp nabız gibi atar."""
+    dt = t - t0
+    if dt < 0:
+        return
+    giris = geri_esnek(min(1, dt / 0.45))
+    nabiz = vurus_zarfi(t)
+    olcek = max(0.05, giris) * (1 + 0.06 * nabiz)
+    aci = -25 * (1 - min(1, dt / 0.45)) + 6 * math.sin(t * 2.4)
+    y = cy + 14 * math.sin(t * 3.1)
+    i = isilti.resize((int(isilti.width * (0.9 + 0.2 * nabiz)),) * 2)
+    i.putalpha(i.split()[3].point(lambda v: int(v * min(1, dt / 0.3))))
+    kare.alpha_composite(i, (int(cx - i.width / 2), int(y - i.height / 2)))
+    im = ikon.rotate(aci, resample=Image.BICUBIC, expand=True)
+    im = im.resize((max(1, int(im.width * olcek)), max(1, int(im.height * olcek))), Image.BILINEAR)
+    kare.alpha_composite(im, (int(cx - im.width / 2), int(y - im.height / 2)))
+
+def parcaciklar(d, t, t0, palet, tohum, cx=W / 2, cy=IKON_Y):
+    """İkon girişinde etrafa saçılan renkli konfeti."""
+    dt = t - t0
+    if not 0 <= dt < 0.9:
+        return
+    rng = np.random.default_rng(tohum)
+    renkler = [renk(palet[2]), renk(palet[3]), renk(palet[4]), (255, 255, 255, 255)]
+    for k in range(16):
+        a = rng.uniform(0, 2 * math.pi)
+        v = rng.uniform(380, 720)
+        x = cx + math.cos(a) * v * dt
+        y = cy + math.sin(a) * v * dt + 500 * dt * dt
+        r = rng.uniform(9, 17) * (1 - dt / 0.9)
+        c = renkler[k % 4][:3] + (int(255 * (1 - dt / 0.9)),)
+        if k % 2:
+            d.ellipse([x - r, y - r, x + r, y + r], fill=c)
+        else:
+            d.polygon([(x, y - r * 1.4), (x + r, y), (x, y + r * 1.4), (x - r, y)], fill=c)
 
 def kare_ciz(t, palet, zamanlar, duzenler, kz, vurgular, dil, sure):
     d_im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -254,10 +314,9 @@ def kare_ciz(t, palet, zamanlar, duzenler, kz, vurgular, dil, sure):
         if oran > 0:
             d.rounded_rectangle([x0, 60, x0 + seg * oran, 70], 5, fill=(255, 255, 255, 255))
 
-    # şu anki cümle
-    # yeni cümlenin ilk kelimesi gelene kadar önceki cümle ekranda kalır
-    aktif = max([i for i, z in enumerate(kz) if t >= z[0]] or [0])
+    aktif = aktif_cumle(t, kz)
     if t < sure - OUTRO + 0.1:
+        parcaciklar(d, t, kz[aktif][0] - 0.05, palet, aktif)
         f, konum = duzenler[aktif]
         zaman = kz[aktif]
         for j, (k, x, y) in enumerate(konum):
@@ -279,7 +338,7 @@ def kare_ciz(t, palet, zamanlar, duzenler, kz, vurgular, dil, sure):
             fy = font(46, 700)
             metin = YORUM[dil]
             g = fy.getlength(metin)
-            y = 1560 + int(8 * math.sin(t * 6))
+            y = 1500 + int(8 * math.sin(t * 6))
             d.rounded_rectangle([(W - g) / 2 - 40, y, (W + g) / 2 + 40, y + 90], 45, fill=(255, 255, 255, 235))
             d.text((W / 2, y + 45), metin, font=fy, fill=renk(palet[0]), anchor="mm")
             d.polygon([(W / 2 - 22, y + 112), (W / 2 + 22, y + 112), (W / 2, y + 140)], fill=(255, 255, 255, 235))
@@ -287,7 +346,7 @@ def kare_ciz(t, palet, zamanlar, duzenler, kz, vurgular, dil, sure):
         p = min(1, (t - (sure - OUTRO)) / 0.3)
         b1, b2 = TAKIP[dil]
         f1, f2 = font(120, 900), font(52, 600)
-        y = 900 + int(60 * (1 - p) ** 2)
+        y = 1020 + int(60 * (1 - p) ** 2)
         g = f1.getlength(b1)
         d.rounded_rectangle([(W - g) / 2 - 60, y - 95, (W + g) / 2 + 60, y + 95], 95, fill=vurgu[:3] + (int(255 * p),))
         d.text((W / 2, y), b1, font=f1, fill=(20, 20, 30, int(255 * p)), anchor="mm")
@@ -306,6 +365,12 @@ def video_yap(s, dil, gun_no, klasor):
     vurgular = s.get("vurgular", [])
     sabit = sabit_katman(f"{SERI[dil]} · {gun_no}", s["baslik"], palet)
     taban, isiklar = arka_plan_hazirla(palet)
+    secilen = [a if a in IKONLAR else YEDEK_IKONLAR[i % len(YEDEK_IKONLAR)]
+               for i, a in enumerate((s.get("ikonlar") or [])[:len(s["cumleler"])])]
+    secilen += [YEDEK_IKONLAR[i % len(YEDEK_IKONLAR)] for i in range(len(secilen), len(s["cumleler"]))]
+    ikon_resimleri = [ikon_hazirla(a) for a in secilen]
+    kalp = ikon_hazirla("kalp", 300)
+    isilti = isilti_hazirla()
     cikti = f"{klasor}/{dil}.mp4"
     ff = subprocess.Popen(
         ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
@@ -318,6 +383,11 @@ def video_yap(s, dil, gun_no, klasor):
         kare = arka_plan(taban, isiklar, t)
         giris = min(1, t / 0.4)  # başlık girişte aşağıdan kayar
         kare.alpha_composite(sabit, (0, int(40 * (1 - giris) ** 2)))
+        if t < sure - OUTRO + 0.1:
+            a = aktif_cumle(t, kz)
+            ikon_ciz(kare, ikon_resimleri[a], isilti, t, kz[a][0] - 0.05, W / 2, IKON_Y)
+        else:  # kapanışta atan kalp
+            ikon_ciz(kare, kalp, isilti, t, sure - OUTRO + 0.1, W / 2, 720)
         kare.alpha_composite(kare_ciz(t, palet, zamanlar, duzenler, kz, vurgular, dil, sure))
         ff.stdin.write(kare.convert("RGB").tobytes())
     ff.stdin.close()

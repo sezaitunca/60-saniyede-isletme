@@ -1,6 +1,6 @@
 # 60 Saniyede İşletme
 
-Senaryoları Claude API (`claude-opus-5-5`) yazar, sesi açık kaynaklı Piper TTS üretir. Her sabah bir işletme kavramını Türkçe, İngilizce, Almanca ve Rusça 30–45 saniyelik dikey videoya dönüştürür, Telegram'dan onaya sunar ve onaylananları YouTube Shorts ile Instagram Reels'e yükler.
+Senaryoları Claude API (`claude-opus-5-5`) yazar, sesi açık kaynaklı Piper TTS üretir. Her sabah bir işletme kavramını Türkçe 30–45 saniyelik dikey videoya dönüştürür, Telegram'dan onaya sunar ve onaylananları YouTube Shorts ile Instagram Reels'e yükler.
 
 ## Kurulum
 
