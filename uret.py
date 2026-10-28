@@ -88,8 +88,9 @@ if __name__ == "__main__":
     klasor = f"cikti/{gun}"
     os.makedirs(klasor, exist_ok=True)
     meta = {}
+    sabit = f"data/senaryolar/{kavram['id']}.json"  # elle düzenlenmiş senaryo varsa Claude çağrılmaz
     for dil in DILLER:
-        s = senaryo(kavram, dil)
+        s = json.load(open(sabit, encoding="utf-8")) if dil == "tr" and os.path.exists(sabit) else senaryo(kavram, dil)
         meta[dil] = s
         onaya_gonder(video_yap(s, dil, gun_no, klasor), gun, dil, s["baslik"])
     with open(f"{klasor}/meta.json", "w", encoding="utf-8") as f:

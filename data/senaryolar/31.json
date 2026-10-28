@@ -1,0 +1,14 @@
+{
+  "baslik": "İşletmenin Fonksiyonları: Bir Kafe Nasıl Ayakta Kalır?",
+  "cumleler": [
+    "İşletmenin fonksiyonları olmadan bir kafe sadece kahveyle ayakta kalabilir mi?",
+    "Bunlar, işletmenin amaçlarına ulaşmak için yürüttüğü temel faaliyet alanlarıdır.",
+    "Yönetim, üretim, pazarlama, finansman, muhasebe, insan kaynakları, araştırma-geliştirme ve halkla ilişkiler bu alanlardır.",
+    "Kafede kahveyi hazırlamak üretim, kampanya yapmak pazarlama, hesapları tutmak muhasebe, çalışan almak insan kaynaklarıdır.",
+    "Sence en sevdiğin kafede hangi fonksiyon en çok göze çarpıyor?"
+  ],
+  "vurgular": ["fonksiyonları", "üretim", "pazarlama", "muhasebe", "insan", "kaynaklarıdır"],
+  "ikonlar": ["soru", "hedef", "kitap", "kahve", "soru"],
+  "aciklama": "Bir kafeyi ayakta tutan sadece kahve değil! İşletmenin fonksiyonlarını kampüsteki kafe örneğiyle 30 saniyede öğren.",
+  "etiketler": ["#işletme", "#işletmeninfonksiyonları", "#yönetim", "#pazarlama", "#alanyaüniversitesi"]
+}
